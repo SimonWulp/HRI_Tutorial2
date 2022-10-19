@@ -1,0 +1,210 @@
+from controller import Robot, Keyboard, Display, Motion, Motor, Camera, DistanceSensor
+import numpy as np
+import cv2
+import torch
+
+
+class MyRobot(Robot):
+    def __init__(self, ext_camera_flag):
+        super(MyRobot, self).__init__()
+        print('> Starting robot controller')
+        
+        self.timeStep = 32 # Milisecs to process the data (loop frequency) - Use int(self.getBasicTimeStep()) for default
+        self.state = 0 # Idle starts for selecting different states
+        
+        
+        # Sensors init
+        self.gps = self.getGPS('gps')
+        self.gps.enable(self.timeStep)
+      
+        self.step(self.timeStep) # Execute one step to get the initial position
+        
+        self.ext_camera = ext_camera_flag        
+        self.displayCamExt = self.getDisplay('CameraExt')
+        #face
+        self.face_detect = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+        #camera
+        self.camera = self.getCamera('CameraBottom')
+        self.camera.enable(self.timeStep)
+        devices = self.getNumberOfDevices()
+        #for device in range(devices) :
+        #    d = self.getDeviceByIndex(device)
+        #    print(d.getName())
+       
+        if self.ext_camera:
+            self.cameraExt = cv2.VideoCapture(0)
+         
+        # Actuators init
+ 
+        self.shoulder_pitch = self.getDevice("LShoulderPitch")
+        self.shoulder_roll = self.getDevice("LShoulderRoll")
+        self.shoulder_pitch.setVelocity(1)
+        self.shoulder_roll.setVelocity(1)
+        
+        # Keyboard
+        self.keyboard.enable(self.timeStep)
+        self.keyboard = self.getKeyboard()
+        
+        
+
+        
+    # Captures the external camera frames 
+    # Returns the image downsampled by 2   
+    def camera_read_external(self):
+        img = []
+        if self.ext_camera:
+            # Capture frame-by-frame
+            ret, frame = self.cameraExt.read()
+            # Our operations on the frame come here
+            img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # From openCV BGR to RGB
+            img = cv2.resize(img, None, fx=0.5, fy=0.5) # image downsampled by 2
+                        
+        return img
+            
+    # Displays the image on the webots camera display interface
+    def image_to_display(self, img):
+        if self.ext_camera:
+            height, width, channels = img.shape
+            imageRef = self.displayCamExt.imageNew(cv2.transpose(img).tolist(), Display.RGB, width, height)
+            self.displayCamExt.imagePaste(imageRef, 0, 0)
+    
+    def print_gps(self):
+        gps_data = self.gps.getValues();
+        print('----------gps----------')
+        print(' [x y z] =  [' + str(gps_data[0]) + ',' + str(gps_data[1]) + ',' + str(gps_data[2]) + ']' )
+        
+    def printHelp(self):
+        print(
+            'Commands:\n'
+            ' H for displaying the commands\n'
+            ' G for print the gps\n'
+        )
+    
+    
+    def get_data(self) :
+    
+    
+    def run_keyboard(self):
+        # Main loop.
+        while True:
+            # Deal with the pressed keyboard key.g
+            k = self.keyboard.getKey()
+            message = ''
+            if k == self.keyboard.LEFT:
+                self.head_yaw.setPosition(2)
+                
+            elif k == self.keyboard.RIGHT:
+                self.head_yaw.setPosition(-2)
+                
+            elif k == self.keyboard.UP :
+                self.forward_motion.play()
+            
+            
+            elif k == self.keyboard.DOWN :
+                self.backward_motion.play()
+                
+            elif k == ord('S') :
+                self.head_yaw.setPosition(0)
+                
+
+            # Perform a simulation step, quit the loop when
+            # Webots is about to quit.
+            if self.step(self.timeStep) == -1:
+                break
+                
+        # finallize class. Destroy external camera.
+        if self.ext_camera:
+            self.cameraExt.release() 
+                
+    # Face following main function
+    def run_face_follower(self):
+        # main control loop: perform simulation steps of self.timeStep milliseconds
+        # and leave the loop when the simulation is over
+      
+        while self.step(self.timeStep) != -1:
+            # Write your controller here
+            image = self.camera_read_external()
+            
+            face = self.face_detect.detectMultiScale(image, 1.1, 4)
+            for(x, y, w, h) in face :
+                cv2.rectangle(image, (x,y), (x+w, y+h),(255,0,0),2)
+                center_x,center_y = x + w/2, y + h/2
+                x_min,x_max = 0, image.shape[0]
+                y_min,y_max = 0, image.shape[1]
+                #print(image.shape[0])
+                self.look_at(center_x,center_y,x_min,y_min,x_max,y_max)
+            
+            self.image_to_display(image)
+            
+        # finallize class. Destroy external camera.
+        if self.ext_camera:
+            self.cameraExt.release()   
+    
+    
+    cv2.startWindowThread()
+    cv2.namedWindow("preview")
+    def run_ball_follower(self) :
+        
+        #Put the entire function in the while loop if running it individually
+        while self.step(self.timeStep) != -1 :
+            image_data = self.camera.getImage()
+            image = np.frombuffer(image_data, np.uint8).reshape((self.camera.getHeight(), self.camera.getWidth(), 4))
+            hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            low_green = np.array([25, 52, 72])
+            high_green = np.array([102, 255, 255])
+            green_mask = cv2.inRange(hsv_image, low_green, high_green)
+            final_image = cv2.bitwise_and(image, image, mask=green_mask)
+            gray_image = cv2.cvtColor(final_image, cv2.COLOR_BGR2GRAY)
+            #blur = cv2.GaussianBlur(gray_image, (5, 5), cv2.BORDER_DEFAULT)
+            _,thresh = cv2.threshold(gray_image,0,255,cv2.THRESH_BINARY)
+            contours,_ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+             #contours = max(contours, key=cv2.contourArea)
+            
+            try :
+                 moments = cv2.moments(contours[0])
+                 cx = int(moments["m10"] / moments["m00"])
+                 cy = int(moments["m01"] / moments["m00"])
+                 dx = 0.6*((cx/120) - 0.6)
+                 dy = 0.6*((cy/160) - 0.3)
+                 yaw_pos = self.head_yaw.getTargetPosition()
+                 pitch_pos = self.head_pitch.getTargetPosition()
+                 roll_pos = yaw_pos - dx
+                 pitch_pos = pitch_pos + dy
+                 self.shoulder_pitch.setVelocity(5)
+                 self.shoulder_roll.setVelocity(5)
+                 if yaw_pos < 2.0 and yaw_pos > -2.0 : 
+                     self.shoulder_pitch.setPosition(roll_pos)
+                 if  pitch_pos < 0.51 and pitch_pos > -0.67 :
+                     self.shoulder_roll.setPosition(pitch_pos)
+                     
+            except :
+                 print('Ball out of camera range')
+           
+     
+        cv2.drawContours(image=image, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        cv2.imshow("preview", final_image)
+        cv2.waitKey(self.timeStep)
+
+    def look_at(self,c_x, c_y, x_min, y_min,x_max,y_max) :
+        pitch_max,pitch_min = 0.5,-0.6
+        yaw_max,yaw_min = 1,-2 
+        yaw_pos = (((c_x - x_min)/(x_max - x_min))*(yaw_max - yaw_min)) + yaw_min
+        pitch_pos = (((c_y - y_min)/(y_max - y_min))*(pitch_max - pitch_min)) + pitch_min
+        self.shoulder_pitch.setVelocity(4)
+        self.shoulder_roll.setVelocity(4)
+        self.shoulder_pitch.setPosition(pitch_pos)
+        self.shoulder_roll.setPosition(yaw_pos)
+        
+        
+   
+            
+    
+# create the Robot instance and run the controller
+print('sab changa si')
+robot = MyRobot(ext_camera_flag = True)
+#robot.run_keyboard()
+#robot.run_face_follower()
+robot.run_ball_follower()
+#robot.run_hri()
+
+
