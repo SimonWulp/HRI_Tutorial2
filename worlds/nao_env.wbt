@@ -1,4 +1,11 @@
-#VRML_SIM R2022a utf8
+#VRML_SIM R2022b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/Floor.proto"
+EXTERNPROTO "../protos/Nao.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/balls/protos/Ball.proto"
+
 WorldInfo {
   info [
     "Aldebaran's Nao H25 V5.0"
@@ -22,8 +29,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.9452660284974304 -0.22455791680863835 0.23674010510950574 4.647253684629975
-  position -1.0578696359108088 0.8660134903693707 -0.4474857587605347
+  orientation 0.7135909597389648 -0.6754996025194999 -0.1857100675106793 3.6767650832247734
+  position 0.5250019430662154 2.6160552850937897 1.8059004237474996
 }
 TexturedBackground {
 }
@@ -35,10 +42,11 @@ Floor {
   tileSize 0.8 0.8
 }
 Ball {
-  translation 0.9991453809638308 0.0499460449981914 -0.05063246302288782
-  rotation -0.9999916734839965 0.001391519898544169 -0.0038362266679765563 1.5835234182588243
+  translation 0.92 0.01 0
   color 0 1 0
-  radius 0.05
+  centerOfMass [
+    0 0 0
+  ]
 }
 Nao {
   hidden position_0_0 8.25120943792612e-11
@@ -59,18 +67,18 @@ Nao {
   hidden position_22_0 1.2037013380959645e-10
   hidden position_22_1 1.2036201708837914e-10
   hidden position_22_2 1.444464393240017e-10
-  hidden rotation_23 0 0.9999999999999999 0 0.9599999991776523
+  hidden rotation_23 0 1 0 0.9599999997592599
   hidden position_23_0 3.8617134563229957e-10
-  hidden rotation_24 0 0.9999999999999999 0 0.9599999985351225
+  hidden rotation_24 0 1 0 0.9599999992276579
   hidden position_24_0 1.0455699263552637e-10
-  hidden rotation_25 0 1 0 0.9599999995786229
-  hidden rotation_26 0 1 0 0.9599999991763324
+  hidden rotation_25 0 1 0 0.9599999997908861
+  hidden rotation_26 0 1 0 0.9599999997592762
   hidden position_26_0 2.4653737820274355e-10
-  hidden rotation_27 0 1 0 0.9599999999209381
+  hidden rotation_27 0 1 0 0.9599999995069254
   hidden position_27_0 1.0455802859787668e-10
-  hidden rotation_28 0 1 0 0.9599999995786441
+  hidden rotation_28 0 1 0 0.9599999997908841
   hidden position_29_0 6.233735248779436e-11
-  hidden rotation_30 0 -1 0 0.9599999997001779
+  hidden rotation_30 0 -1 0 0.9599999998753255
   hidden rotation_31 0.17180072946381736 0.9745199466067609 0.14420604363637526 1.7703607544374165
   hidden position_31_0 -1.3959992619386834
   hidden rotation_32 -1 0 0 1.3959992619386834
@@ -81,18 +89,18 @@ Nao {
   hidden position_34_0 -1.5812704073498146e-10
   hidden position_34_1 -8.166593597873204e-11
   hidden position_34_2 1.4502852311194072e-10
-  hidden rotation_35 0 1 0 0.9599999994620404
+  hidden rotation_35 0 1 0 0.9600000003162544
   hidden position_35_0 2.495336333334414e-10
-  hidden rotation_36 0 0.9999999999999999 0 0.9599999999030006
+  hidden rotation_36 0 1 0 0.9599999995009332
   hidden position_36_0 7.11392178366582e-11
-  hidden rotation_37 0 1 0 0.9599999997449989
-  hidden rotation_38 0 1 0 0.9600000001838276
+  hidden rotation_37 0 1 0 0.9599999998577218
+  hidden rotation_38 0 1 0 0.960000000163332
   hidden position_38_0 3.8329483537357607e-10
-  hidden rotation_39 0 1 0 0.9599999985499513
+  hidden rotation_39 0 0.9999999999999999 0 0.9599999992334107
   hidden position_39_0 1.0557890207420397e-10
-  hidden rotation_40 0 0.9999999999999999 0 0.9599999995727989
+  hidden rotation_40 0 1 0 0.9599999997888424
   hidden position_41_0 2.8400025304754788e-11
-  hidden rotation_42 0 -1 0 0.9599999998698068
+  hidden rotation_42 0 -1 0 0.9599999999431997
   hidden rotation_43 0 0.7071067811865475 0.7071067811865475 6.270609764494714e-06
   hidden position_43_0 -0.03363495569842507
   hidden rotation_44 -1 0 0 0.033634955698426235

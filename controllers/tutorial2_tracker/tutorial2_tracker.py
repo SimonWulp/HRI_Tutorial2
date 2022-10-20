@@ -71,7 +71,7 @@ class MyRobot(Robot):
                 
                     dx = 0.6*((cx/120) - 0.1)
                     dy = 0.5*((cy/160) + 0.3)
-                  
+                    
                     roll_pos = self.shoulder_roll.getTargetPosition() - (prev_roll+dx)
                     pitch_pos = self.shoulder_pitch.getTargetPosition() - (prev_pitch-dy)
                     prev_roll = roll_pos
@@ -86,7 +86,7 @@ class MyRobot(Robot):
                     roll.append(roll_pos)
                     pitch.append(pitch_pos)
                     time.sleep(0.08)
-                 
+                    
                     if roll_in_range(roll_pos) : 
                         self.shoulder_roll.setPosition(roll_pos)
                         
@@ -103,7 +103,6 @@ class MyRobot(Robot):
                     
             except (IndexError, ZeroDivisionError):
                 print('ball out of camera range')
-                
                 
             if k == ord('D') :
                 self.make_data(center_x,center_y,pitch,roll)
@@ -132,7 +131,7 @@ class FFN(nn.Module) :
         return x
 
 class MDN(nn.Module):
-    def __init__(self, n_input=2, n_hidden=6, n_output, n_gaussians=2):
+    def __init__(self, n_input=2, n_hidden=6, n_output=2, n_gaussians=2):
         super(MDN, self).__init__()
         self.network = nn.Sequential(nn.Linear(n_input,n_hidden),
                                      nn.tanh(),
@@ -148,20 +147,17 @@ class MDN(nn.Module):
         mu = self.mean(net)
         return pi, sigma, mu
 
-model = FFN()
-criterion = nn.MSELoss()
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     
 def train_net(net, dataloader, max_epochs=10):
-   
+    criterion = nn.MSELoss()
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
     for epoch in range(max_epochs):        
         for index, data in dataloader.iterrows() :
-            #print(data)
             input_x,input_y,target_pitch,target_roll = data
             inputs = torch.Tensor([input_x,input_y])
             targets = torch.Tensor([target_pitch, target_roll])
-            print(targets)
             optimizer.zero_grad()
             outputs = net(inputs)
             loss = criterion(outputs, targets)
@@ -189,13 +185,13 @@ def mdn_loss(pi,sigma,mu,y):
     loss = torch.mean(loss)
     return loss
     
-    
-    
-data = pd.read_csv('HRI2.csv')
-#data = data.sample(frac=1)
-train_net(model,data)
-torch.save(model.state_dict(), 'FFN.pth')
-robot = MyRobot(ext_camera_flag = True)
-robot.run_ball_follower(data_collection=False)
+def main():
+    data = pd.read_csv('HRI2.csv')
+    model = FFN()
+    train_net(model,data)
+    torch.save(model.state_dict(), 'FFN.pth')
+    robot = MyRobot(ext_camera_flag = True)
+    robot.run_ball_follower(data_collection=False)
 
-
+if __name__ == "__main__":
+    main()
