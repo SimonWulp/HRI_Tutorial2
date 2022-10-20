@@ -151,7 +151,7 @@ class MDN(nn.Module):
     
 def train_net(net, dataloader, max_epochs=10):
     criterion = nn.MSELoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
     for epoch in range(max_epochs):        
         for index, data in dataloader.iterrows() :
