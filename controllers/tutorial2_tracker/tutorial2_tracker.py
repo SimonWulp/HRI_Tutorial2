@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 import time
@@ -108,7 +109,7 @@ class MyRobot(Robot):
                     pi,sigma,mu = model_mdn(torch.tensor([cx,cy]))
                     k = 0
                     t = np.random.uniform(0,1)
-                    for i,p in enurmarate(pi) :
+                    for i, p in enumerate(pi) :
                         if t < p :
                             k=i
                             break
@@ -183,84 +184,95 @@ def sample_pred(pi, sigma, mu):
     N, K = pi.shape # Number of samples and number of Gaussians (Same Pi is assumend to work for all Noutputs)
     _, KT = mu.shape # Noutput x Number of Gaussians
     NO = int(KT / K) # Noutput
-    print('Samples:', N, ', Gaussians:', K, ', NoutXNGauss:',KT, ', Noutput:', T)
+    print('Samples:', N, ', Gaussians:', K, ', NoutXNGauss:',KT, ', Noutput:', NO)
     pred = Variable(torch.zeros(N, NO))  # sample for all variables
     
     for i in range(N): # loop over samples
       # pi must sum to 1, thus we can sample from a uniform distribution
-      r =  np.
+      r =  np.random.uniform()
       # split [0, 1] into k segments: [0, pi[0]), [pi[0], pi[1]), ..., [pi[K-1], pi[K])
       # then determine the segment r that falls into and sample from that component
       prob_sum = 0
       for k in range(K): # loop over gaussians
         prob_sum += pi.data[i, k] # Sample i, Gaussian k cummulative probability
-        if # the random vaule is less than the cummulative probability
+        if r < prob_sum: # the random vaule is less than the cummulative probability
           # sample from the kth Gaussian component using np normal function
           for t in range(NO):
-            sample = # to idex the means you can use mu[i, k*NO + it]
+            sample = ... # to idex the means you can use mu[i, k*NO + it]
             pred[i, t] = sample            
           break
     return pred
 
-model = FFN()
-criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.006)
-
-model_mdn = MDN()
-mdn_optimizer = optim.Adam(model_mdn.parameters(),lr=0.002)
-
-def train_net_mdn(net, dataloader, epochs=200) :
-    for epoch in range(epochs):        
-        for index, data in dataloader.iterrows() :
-            #print(data)
-            input_x,input_y,target_pitch,target_roll = data
-            inputs = torch.Tensor([input_x,input_y])
-            targets = torch.Tensor([target_pitch, target_roll])
-            
-            mdn_optimizer.zero_grad()
-            pi, sigma, mu = net(inputs)
-            loss = mdn_loss(pi, sigma, mu, targets)
-            loss.backward()
-            mdn_optimizer.step()
-            
-        print('epoch [{}/{}], loss:{:.4f}'
-            .format(epoch+1, epochs, loss.item()))
-            
-    print('Finished Training')  
-    
 def train_net_ffn(net, dataloader, max_epochs=10):
-   
-    for epoch in range(max_epochs):        
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(net.parameters(), lr=0.006)
+
+    losses = []
+    for epoch in range(max_epochs):    
+        epoch_losses = []
         for index, data in dataloader.iterrows() :
-            #print(data)
             input_x,input_y,target_pitch,target_roll = data
             inputs = torch.Tensor([input_x,input_y])
             targets = torch.Tensor([target_pitch, target_roll])
-            print(targets)
             optimizer.zero_grad()
             outputs = net(inputs)
             loss = criterion(outputs, targets)
+            epoch_losses.append(loss.detach().numpy())
             loss.backward()
             optimizer.step()
+        
+        losses.append(np.mean(epoch_losses))
+        print('epoch [{}/{}], loss:{:.4f}'.format(epoch+1, max_epochs, loss.item()))
             
-        print('epoch [{}/{}], loss:{:.4f}'
-            .format(epoch+1, max_epochs, loss.item()))
+    print('Finished Training')
+
+    return losses
+
+def train_net_mdn(net, dataloader, epochs=200):
+    optimizer = optim.Adam(net.parameters(),lr=0.002)
+
+    losses = []
+    for epoch in range(epochs):
+        epoch_losses = []      
+        for index, data in dataloader.iterrows() :
+            input_x,input_y,target_pitch,target_roll = data
+            inputs = torch.Tensor([input_x,input_y])
+            targets = torch.Tensor([target_pitch, target_roll])
+            optimizer.zero_grad()
+            pi, sigma, mu = net(inputs)
+            loss = mdn_loss(pi, sigma, mu, targets)
+            epoch_losses.append(loss.detach().numpy())
+            loss.backward()
+            optimizer.step()
+        
+        losses.append(np.mean(epoch_losses))    
+        print('epoch [{}/{}], loss:{:.4f}'.format(epoch+1, epochs, loss.item()))
             
-    print('Finished Training')  
-
-
-
+    print('Finished Training')
     
-    
-    
-data = pd.read_csv('HRI2.csv')
-data = data.sample(frac=1)
-data = data[0:1000]
-train_net_mdn(model_mdn, data)
-torch.save(model_mdn.state_dict(), 'MDN.pth')
-#train_net_ffn(model,data)
-#torch.save(model.state_dict(), 'FFN.pth')
-#robot = MyRobot(ext_camera_flag = True)
-#robot.run_ball_follower(data_collection=False)
+    return losses 
 
 
+def main():
+    data = pd.read_csv('HRI2.csv')
+    data = data.sample(frac=1)
+    data = data[0:1000]
+
+    # # train FFN
+    # model = FFN()
+    # ffn_losses = train_net_ffn(model, data)
+    # torch.save(model.state_dict(), 'FFN.pth')
+
+    # # train MDN
+    # model = MDN()
+    # losses = train_net_mdn(model, data)
+    # torch.save(model.state_dict(), 'MDN.pth')
+
+    # plt.plot(losses)
+    # plt.show()
+
+    robot = MyRobot(ext_camera_flag = True)
+    robot.run_ball_follower(mode='FFN')
+
+if __name__ == "__main__":
+    main()
